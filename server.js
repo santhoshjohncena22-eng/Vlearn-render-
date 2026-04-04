@@ -169,6 +169,13 @@ async function seed() {
     ["phone","9113587199"],
     ["timings","Mon–Sat: 8:00 AM – 5:00 PM"],
     ["mapAddress","#578, 11th Cross, 7th Main, Vinayaka Layout, Nagharbhavi, Blr-72"],
+    ["schedule",JSON.stringify([
+      {"time":"8:00 AM","name":"Mathematics","meta":"Class 4 & 5","room":"Room A","color":"#f5a800"},
+      {"time":"9:30 AM","name":"English","meta":"Class 3","room":"Room B","color":"#22d3c8"},
+      {"time":"11:00 AM","name":"Science","meta":"Class 8 & 9","room":"Room A","color":"#4f8ef7"},
+      {"time":"2:00 PM","name":"All Subjects","meta":"LKG–Class 2","room":"Room C","color":"#f4546a"},
+      {"time":"3:30 PM","name":"Maths+Science","meta":"Class 10","room":"Room A","color":"#a78bfa"}
+    ])],
     ["features",JSON.stringify([{icon:"📚",title:"All Subjects",desc:"LKG to 10th Std"},{icon:"👤",title:"Individual Attention",desc:"Small batches"},{icon:"📋",title:"Regular Tests",desc:"Weekly evaluation"},{icon:"💡",title:"Personal Guidance",desc:"Custom plans"},{icon:"📈",title:"Improved Performance",desc:"Monthly tracking"},{icon:"😊",title:"Friendly Environment",desc:"Safe & positive space"}])],
   ];
   for (const [k,v] of homeRows)
@@ -335,11 +342,18 @@ app.delete("/api/students/:id", auth, staff, async (req, res) => {
 app.patch("/api/students/:id/link-parent", auth, adminOnly, async (req, res) => {
   try {
     const { parent_id } = req.body;
+    // Clear old parent link for this student
+    const oldStu = (await q("SELECT parent_id FROM students WHERE id=$1", [req.params.id])).rows[0];
+    if (oldStu?.parent_id) await q("UPDATE users SET child_id=NULL WHERE id=$1", [oldStu.parent_id]);
+    // Clear this parent from any other student they were linked to
+    if (parent_id) await q("UPDATE students SET parent_id=NULL WHERE parent_id=$1 AND id!=$2", [parent_id, req.params.id]);
+    // Set new link
     await q("UPDATE students SET parent_id=$1 WHERE id=$2", [parent_id||null, req.params.id]);
     if (parent_id) await q("UPDATE users SET child_id=$1 WHERE id=$2", [req.params.id, parent_id]);
     const { rows } = await q("SELECT * FROM students WHERE id=$1", [req.params.id]);
     const s = await buildStudent(rows[0]);
     io.emit("student_updated", s);
+    io.emit("users_updated");
     res.json(s);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -551,7 +565,7 @@ app.get("/api/home", async (req, res) => {
 
 app.put("/api/home", auth, adminOnly, async (req, res) => {
   try {
-    const { heroTitle, heroSubtitle, heroDesc, phone, timings, mapAddress, features } = req.body;
+    const { heroTitle, heroSubtitle, heroDesc, phone, timings, mapAddress, features, schedule } = req.body;
     const ups = [
       ["heroTitle", heroTitle], ["heroSubtitle", heroSubtitle], ["heroDesc", heroDesc],
       ["phone", phone], ["timings", timings], ["mapAddress", mapAddress],
