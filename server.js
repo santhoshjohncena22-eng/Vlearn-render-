@@ -18,10 +18,11 @@ const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "vlearn-santha-2026";
 
 /* ─── POSTGRES CONNECTION ─── */
-const DB_URL = process.env.DATABASE_URL || 'postgresql://postgres:1TybLqe5ZztUpGGb@db.kqtzeucpqvbscqammfaz.supabase.co:5432/postgres';
+const DB_URL = process.env.DATABASE_URL || 'postgresql://postgres.kqtzeucpqvbscqammfaz:1TybLqe5ZztUpGGb@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres';
 const pool = new Pool({
   connectionString: DB_URL,
   ssl: { rejectUnauthorized: false },
+  family: 4,
 });
 console.log('Connecting to:', DB_URL.split('@')[1]);
 
