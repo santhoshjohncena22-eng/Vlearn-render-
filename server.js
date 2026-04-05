@@ -565,7 +565,7 @@ app.get("/api/home", async (req, res) => {
 
 app.put("/api/home", auth, adminOnly, async (req, res) => {
   try {
-    const { heroTitle, heroSubtitle, heroDesc, phone, timings, mapAddress, features, schedule } = req.body;
+    const { heroTitle, heroSubtitle, heroDesc, phone, timings, mapAddress, features, schedule, lat, lng } = req.body;
     const ups = [
       ["heroTitle", heroTitle], ["heroSubtitle", heroSubtitle], ["heroDesc", heroDesc],
       ["phone", phone], ["timings", timings], ["mapAddress", mapAddress],
