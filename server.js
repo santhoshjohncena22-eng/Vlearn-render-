@@ -197,7 +197,8 @@ async function seed() {
 
 /* ─── MIDDLEWARE ─── */
 app.use(cors());
-app.use(express.json());
+app.use(express.json({limit:'20mb'}));
+app.use(express.urlencoded({limit:'20mb',extended:true}));
 
 const auth = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -219,6 +220,7 @@ async function buildStudent(s) {
   ]);
   return {
     ...s,
+    feeStatus: s.fee_status,   // map snake_case to camelCase for frontend
     tests: tests.rows,
     feeHistory: feeHistory.rows,
     attendance: attendance.rows,
@@ -430,7 +432,7 @@ app.put("/api/students/:id/fee", auth, staff, async (req, res) => {
     const { fee_status } = req.body;
     await q("UPDATE students SET fee_status=$1 WHERE id=$2", [fee_status, req.params.id]);
     const s = (await q("SELECT * FROM students WHERE id=$1", [req.params.id])).rows[0];
-    io.emit("fee_updated", { student_id: req.params.id, fee_status, name: s?.name });
+    io.emit("fee_updated", { student_id: req.params.id, fee_status, feeStatus: fee_status, name: s?.name });
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -570,6 +572,9 @@ app.put("/api/home", auth, adminOnly, async (req, res) => {
       ["heroTitle", heroTitle], ["heroSubtitle", heroSubtitle], ["heroDesc", heroDesc],
       ["phone", phone], ["timings", timings], ["mapAddress", mapAddress],
       ["features", features ? JSON.stringify(features) : undefined],
+      ["schedule", schedule !== undefined ? JSON.stringify(schedule) : undefined],
+      ["lat", lat !== undefined ? String(lat) : undefined],
+      ["lng", lng !== undefined ? String(lng) : undefined],
     ];
     for (const [k,v] of ups)
       if (v !== undefined)
