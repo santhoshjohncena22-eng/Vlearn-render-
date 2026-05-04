@@ -1,7 +1,7 @@
 {
   "name": "vlearn-backend",
   "version": "3.0.0",
-  "description": "VLearn Tuition Centre — Backend API with PostgreSQL/Supabase",
+  "description": "VLearn Tuition Centre Backend - PostgreSQL",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
